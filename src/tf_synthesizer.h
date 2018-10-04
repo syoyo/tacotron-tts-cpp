@@ -27,8 +27,9 @@ class TensorflowSynthesizer {
   /// @param[in] input_lengths Tensor with shape = [N],  where N is batch size
   /// and values are the lengths
   ///      of each sequence in inputs.
+  /// @param[out] output Output audio data(floating point)
   ///
-  bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t> &input_lengths);
+  bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t> &input_lengths, std::vector<float> *output);
 
  private:
   class Impl;

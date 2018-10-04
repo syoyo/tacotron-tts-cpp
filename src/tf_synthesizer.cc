@@ -81,7 +81,7 @@ public:
     return true;
   }
 
-  bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t>& input_lengths) {
+  bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t>& input_lengths, std::vector<float> *output) {
 
     // Batch size = 1 for a while
     int N = 1;
@@ -120,17 +120,12 @@ public:
     TTypes<float, 1>::ConstTensor tensor = output_tensor.tensor<float, 1>();
     std::cout << "len = " << tensor.dimension(0) << std::endl;
 
-#if 0
-    // Copy to output image
-    assert(tensor.dimension(0) == 1);
-    size_t out_height = static_cast<size_t>(tensor.dimension(1));
-    size_t out_width = static_cast<size_t>(tensor.dimension(2));
-    size_t out_channels = static_cast<size_t>(tensor.dimension(3));
-    out_img.create(out_width, out_height, out_channels);
-    out_img.foreach([&](int x, int y, int c, float& v) {
-      v = tensor(0, y, x, c);
-    });
-#endif
+    assert(tensor.dimension(0) > 0);
+    output->resize(tensor.dimension(0));
+    // TODO(LTE): Use memcpy 
+    for (size_t i = 0; i < output->size(); i++) {
+      (*output)[i] = tensor(i);
+    }
 
     return true;
   }
@@ -152,8 +147,8 @@ bool TensorflowSynthesizer::load(const std::string& graph_filename,
   return impl->load(graph_filename, inp_layer, out_layer);
 }
 
-bool TensorflowSynthesizer::synthesize(const std::vector<int32_t> &input_sequence, const std::vector<int32_t> &input_lengths) {
-  return impl->synthesize(input_sequence, input_lengths);
+bool TensorflowSynthesizer::synthesize(const std::vector<int32_t> &input_sequence, const std::vector<int32_t> &input_lengths, std::vector<float> *output) {
+  return impl->synthesize(input_sequence, input_lengths, output);
 }
 
 

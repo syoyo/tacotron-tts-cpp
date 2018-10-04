@@ -63,6 +63,52 @@ bool LoadSequence(const std::string &sequence_filename, std::vector<int32_t> *se
   
 }
 
+static uint16_t ftous(const float x)
+{
+  int f = int(x);
+  return std::max(uint16_t(0), std::min(std::numeric_limits<uint16_t>::max(), uint16_t(f)));
+}
+
+bool SaveWav(const std::string &filename, const std::vector<float> &samples, const int sample_rate)
+{
+  // We want to save audio with 32bit float format without loosing precision,
+  // but librosa only supports PCM audio, so save audio data as 16bit PCM.
+
+  drwav_data_format format;
+  format.container = drwav_container_riff;     // <-- drwav_container_riff = normal WAV files, drwav_container_w64 = Sony Wave64.
+  format.format = DR_WAVE_FORMAT_PCM; 
+  format.channels = 1;
+  format.sampleRate = sample_rate;
+  format.bitsPerSample = 16;
+  drwav* pWav = drwav_open_file_write(filename.c_str(), &format);
+
+  std::vector<unsigned short> data;
+  data.resize(samples.size());
+
+  float max_value = std::fabs(samples[0]);
+  for (size_t i = 0; i < samples.size(); i++) {
+    max_value = std::max(max_value, std::fabs(samples[i]));
+  }
+  
+  std::cout << "max value = " << max_value;
+
+  float factor = 32767.0f / std::max(0.01f, max_value);
+
+  // normalize & 16bit quantize.
+  for (size_t i = 0; i < samples.size(); i++) {
+    data[i] = ftous(factor * samples[i]); 
+  }
+
+  drwav_uint64 n = static_cast<drwav_uint64>(samples.size());
+  drwav_uint64 samples_written = drwav_write(pWav, n, data.data());
+
+  drwav_close(pWav);
+
+  if (samples_written > 0) return true;
+
+  return false;
+}
+
 
 int main(int argc, char **argv) {
   cxxopts::Options options("tts", "Tacotron text to speec in C++");
@@ -70,6 +116,7 @@ int main(int argc, char **argv) {
                         cxxopts::value<std::string>())(
       "g,graph", "Input freezed graph file", cxxopts::value<std::string>())
       ("h,hparams", "Hyper parameters(JSON)", cxxopts::value<std::string>());
+      ("o,output", "Output WAV filename", cxxopts::value<std::string>());
 
   auto result = options.parse(argc, argv);
 
@@ -90,6 +137,11 @@ int main(int argc, char **argv) {
 
   std::string input_filename = result["input"].as<std::string>();
   std::string graph_filename = result["graph"].as<std::string>();
+  std::string output_filename = "output.wav";
+
+  if (result.count("output")) {
+    output_filename = result["output"].as<std::string>();
+  }
 
   std::vector<int32_t> sequence;
   if (!LoadSequence(input_filename, &sequence)) {
@@ -120,11 +172,18 @@ int main(int argc, char **argv) {
   std::vector<int32_t> input_lengths;
   input_lengths.push_back(int(sequence.size()));
 
-  if (!tf_synthesizer.synthesize(sequence, input_lengths)) {
+  std::vector<float> output_wav;
+
+  if (!tf_synthesizer.synthesize(sequence, input_lengths, &output_wav)) {
     std::cerr << "Failed to synthesize for a given sequence." << std::endl;
     return EXIT_FAILURE;
   }
 
+  if (!SaveWav(output_filename, output_wav, /* sample rate */20000)) {
+    std::cerr << "Failed to save wav file :" << output_filename << std::endl;
+
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }
