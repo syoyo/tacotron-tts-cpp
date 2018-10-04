@@ -29,6 +29,8 @@
 #pragma clang diagnostic pop
 #endif
 
+#include <chrono>
+
 using namespace tensorflow;
 using namespace tensorflow::ops;
 
@@ -55,40 +57,6 @@ Status LoadGraph(const string& graph_file_name,
   return Status::OK();
 }
 
-/*
-def _griffin_lim_tensorflow(S):
-  '''TensorFlow implementation of Griffin-Lim
-  Based on https://github.com/Kyubyong/tensorflow-exercises/blob/master/Audio_Processing.ipynb
-  '''
-  with tf.variable_scope('griffinlim'):
-    # TensorFlow's stft and istft operate on a batch of spectrograms; create batch of size 1
-    S = tf.expand_dims(S, 0)
-    S_complex = tf.identity(tf.cast(S, dtype=tf.complex64))
-    y = _istft_tensorflow(S_complex)
-    for i in range(hparams.griffin_lim_iters):
-      est = _stft_tensorflow(y)
-      angles = est / tf.cast(tf.maximum(1e-8, tf.abs(est)), tf.complex64)
-      y = _istft_tensorflow(S_complex * angles)
-    return tf.squeeze(y, 0)
-*/
-
-Output dbToAmp(Scope &scope, Input x) {
-  auto c0 = Const<float>(scope, 10.0f);
-  auto c1 = Const<float>(scope, 0.05f);
-  return Pow(scope, OnesLike(scope, Mul(scope, Shape(scope, x), c0)), Mul(scope, x, c1));
-}
-
-/*
-void GriffinLim(float power) {
-
-  auto Pow(Ones(
-  auto root = Scope::NewRootScope();
-  auto c = Const(root, power);
-  auto pow_op = Pow(root, c);
-  auto S = ExpandDims(root, pow_op, 0);
-}
-*/
-
 } // anonymous namespace
 
 class TensorflowSynthesizer::Impl {
@@ -110,35 +78,50 @@ public:
     input_layer = inp_layer;
     output_layer = out_layer;
 
-    // TODO(LTE): Add Griffin-Rim layer
-
     return true;
   }
 
-  bool synthesize() {
+  bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t>& input_lengths) {
 
-#if 0
-    // Copy from input image
-    Eigen::Index inp_width = static_cast<Eigen::Index>(inp_img.getWidth());
-    Eigen::Index inp_height = static_cast<Eigen::Index>(inp_img.getHeight());
-    Eigen::Index inp_channels = static_cast<Eigen::Index>(inp_img.getChannels());
-    Tensor input_tensor(DT_FLOAT, {1, inp_height, inp_width, inp_channels});
-    // TODO: No copy
-    std::copy_n(inp_img.getData(), inp_width * inp_height * inp_channels,
-                input_tensor.flat<float>().data());
+    // Batch size = 1 for a while
+    int N = 1;
+    
+
+    int input_length = int(input_sequence.size()); 
+    Tensor input_tensor(DT_INT32, {N, input_length});
+
+    std::copy_n(input_sequence.data(), input_sequence.size(),
+                input_tensor.flat<int32_t>().data());
+
+    Tensor input_lengths_tensor(DT_INT32, {N});
+
+    *(input_lengths_tensor.flat<int32_t>().data()) = input_length;
+
+     auto startT = std::chrono::system_clock::now();
+
 
     // Run
     std::vector<Tensor> output_tensors;
-    Status run_status = session->Run({{input_layer, input_tensor}},
+    Status run_status = session->Run({{input_layer, input_tensor}, {"input_lengths", input_lengths_tensor}},
                                      {output_layer}, {}, &output_tensors);
     if (!run_status.ok()) {
       std::cerr << "Running model failed: " << run_status;
       return false;
     }
-    const Tensor& output_tensor = output_tensors[0];
 
+    auto endT = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> ms = endT - startT;
+
+    std::cout << "Synth time : " << ms.count() << " [ms]" << std::endl;
+
+    const Tensor& output_tensor = output_tensors[0];
+    std::cout << "output dim " << output_tensor.dims() << std::endl;
+
+    TTypes<float, 1>::ConstTensor tensor = output_tensor.tensor<float, 1>();
+    std::cout << "len = " << tensor.dimension(0) << std::endl;
+
+#if 0
     // Copy to output image
-    TTypes<float, 4>::ConstTensor tensor = output_tensor.tensor<float, 4>();
     assert(tensor.dimension(0) == 1);
     size_t out_height = static_cast<size_t>(tensor.dimension(1));
     size_t out_width = static_cast<size_t>(tensor.dimension(2));
@@ -169,8 +152,8 @@ bool TensorflowSynthesizer::load(const std::string& graph_filename,
   return impl->load(graph_filename, inp_layer, out_layer);
 }
 
-bool TensorflowSynthesizer::synthesize() {
-  return impl->synthesize();
+bool TensorflowSynthesizer::synthesize(const std::vector<int32_t> &input_sequence, const std::vector<int32_t> &input_lengths) {
+  return impl->synthesize(input_sequence, input_lengths);
 }
 
 
