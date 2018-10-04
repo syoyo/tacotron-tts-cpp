@@ -1,18 +1,23 @@
-# Text-to-speech in C++ using Tacotron model + Tensorflow
+# Text-to-speech in (partially) C++ using Tacotron model + Tensorflow
 
 Running Tacotron model in TensorFlow C++ API.
 
 Good for running TTS in mobile or embedded device.
 
-Code is based on keithito's tacotron implementation: 
+Code is based on keithito's tacotron implementation: https://github.com/keithito/tacotron 
 
 ## Status
 
-Experimental. Currently only running Tacontron model is coded in C++.
+Experimental.
+
+Currently only running Tacontron model is coded in C++.
+
+Python preprocessing is required to generate sequence data from text.
+Python postprocessing is required to do `inv_preemphasis` for Tacotron generated .wav.
 
 ## Requirment
 
-* TensorFlow f1.8+
+* TensorFlow r1.8+
 * Ubuntu 16.04
 * C++ compiler + cmake
 
@@ -30,6 +35,7 @@ class Synthesizer:
     # write graph
     tf.train.write_graph(self.session.graph.as_graph_def(), "models/", "graph.pb")
 ```
+
 ## Freeze graph
 
 Freeze graph for example:
@@ -41,6 +47,8 @@ freeze_graph \
         --output_graph=models/tacotron_frozen.pb \
         --output_node_names=model/griffinlim/Squeeze
 ```
+
+Example freeze graph file is included in this repo.
 
 ## Build
 
@@ -81,9 +89,12 @@ out = io.BytesIO()
 audio.save_wav(wav, "processed.wav")
 ```
 
+example output01.wav and processed01.wav is included in `sample/`
+
 ## Performance
 
-Currently TensorFlow C++ code path only uses single CPU core, and time for synthesis is roughly 10x slower on 2018's CPU than synthesized audio length(e.g. 60 secs for 6 secs audio).
+Currently TensorFlow C++ code path only uses single CPU core, so its slow.
+Time for synthesis is roughly 10x slower on 2018's CPU than synthesized audio length(e.g. 60 secs for 6 secs audio).
 
 ## TODO
 
