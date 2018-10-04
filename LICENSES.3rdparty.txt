@@ -1,3 +1,15 @@
 - dr_wav
 
 Public domain
+
+- keithito tacotron
+
+MIT license
+
+- cxxopts.hpp
+
+MIT license
+
+- json.hpp
+
+MIT license

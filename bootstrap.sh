@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # source code directory of tensorflow
-TF_DIR=`pwd`/../tensorflow-cmake
+TF_DIR=`pwd`/../tensorflow
 
 # external source code directory of tensorflow(e.g. Eigen)
-TF_EXTERNAL_DIR=`pwd`/../tensorflow-cmake/bazel-tensorflow-cmake
+TF_EXTERNAL_DIR=`pwd`/../tensorflow/bazel-tensorflow
 
 # bazel build directory of tensorflow where `libtensorflow.so` exists.
 # Please specify absolute path, otherwise cmake cannot find lib**.a
-TF_BUILD_DIR=`pwd`/../tensorflow-cmake/bazel-bin/tensorflow
+TF_BUILD_DIR=`pwd`/../tensorflow/bazel-bin/tensorflow
 
 rm -rf build
 
