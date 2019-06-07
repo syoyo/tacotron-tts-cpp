@@ -85,6 +85,7 @@ target_include_directories(tts
     PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/protobuf_archive/src
     PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/eigen_archive
     PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/nsync/public
+    PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/com_google_absl
 
     # this project
     PUBLIC ${CMAKE_SOURCE_DIR}/src
@@ -113,7 +114,7 @@ if (WIN32)
   if (CMAKE_VERSION VERSION_GREATER 3.6.0)
     set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT tts)
   endif ()
-  
+
   # For easier debugging in VS IDE(cmake 3.8.0 or later required)
   if (CMAKE_VERSION VERSION_GREATER 3.8.0)
     # Set working directory to $lucia git repo root.
