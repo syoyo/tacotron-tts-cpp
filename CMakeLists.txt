@@ -64,6 +64,7 @@ include_directories(
 set (CORE_SOURCE
     ${CMAKE_SOURCE_DIR}/src/main.cc
     ${CMAKE_SOURCE_DIR}/src/tf_synthesizer.cc
+    ${CMAKE_SOURCE_DIR}/src/audio_util.cc
     )
 
 link_directories(
