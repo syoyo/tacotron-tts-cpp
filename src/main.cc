@@ -9,6 +9,7 @@
 
 #include "cxxopts.hpp"
 #include "json.hpp"
+#include "audio_util.h"
 
 #define DR_WAV_IMPLEMENTATION
 #include "dr_wav.h"
@@ -18,6 +19,14 @@
 #endif
 
 #include "tf_synthesizer.h"
+
+class HyperParameters
+{
+  public:
+    HyperParameters() : preemphasis(0.97f) {};
+
+    float preemphasis;
+};
 
 template<typename T>
 bool GetNumberArray(const nlohmann::json &j, const std::string &name,
@@ -60,7 +69,34 @@ bool LoadSequence(const std::string &sequence_filename, std::vector<int32_t> *se
   is >> j;
 
   return GetNumberArray(j, "sequence", sequence);
-  
+
+}
+
+bool ParseHyperPrameters(const std::string &json_filename, HyperParameters *hparams)
+{
+  std::ifstream is(json_filename);
+  if (!is) {
+    std::cerr << "Failed to open/read hyper parameter JSON file : " << json_filename << std::endl;
+    return false;
+  }
+
+  nlohmann::json j;
+  is >> j;
+
+  if (j.count("preemphasis")) {
+    auto param = j["preemphasis"];
+    if (param.is_number()) {
+      hparams->preemphasis = float(param.get<double>());
+    }
+  }
+
+  return true;
+}
+
+void PrintHyperParameters(const HyperParameters &hparams)
+{
+  std::cout << "Hyper parameter and configurations :\n";
+  std::cout << "  preemphasis : " << hparams.preemphasis << "\n";
 }
 
 static uint16_t ftous(const float x)
@@ -76,7 +112,7 @@ bool SaveWav(const std::string &filename, const std::vector<float> &samples, con
 
   drwav_data_format format;
   format.container = drwav_container_riff;     // <-- drwav_container_riff = normal WAV files, drwav_container_w64 = Sony Wave64.
-  format.format = DR_WAVE_FORMAT_PCM; 
+  format.format = DR_WAVE_FORMAT_PCM;
   format.channels = 1;
   format.sampleRate = sample_rate;
   format.bitsPerSample = 16;
@@ -89,14 +125,14 @@ bool SaveWav(const std::string &filename, const std::vector<float> &samples, con
   for (size_t i = 0; i < samples.size(); i++) {
     max_value = std::max(max_value, std::fabs(samples[i]));
   }
-  
+
   std::cout << "max value = " << max_value;
 
   float factor = 32767.0f / std::max(0.01f, max_value);
 
   // normalize & 16bit quantize.
   for (size_t i = 0; i < samples.size(); i++) {
-    data[i] = ftous(factor * samples[i]); 
+    data[i] = ftous(factor * samples[i]);
   }
 
   drwav_uint64 n = static_cast<drwav_uint64>(samples.size());
@@ -123,16 +159,21 @@ int main(int argc, char **argv) {
   if (!result.count("input")) {
     std::cerr << "Please specify input sequence file with -i or --input option."
               << std::endl;
-    return -1;
+    return EXIT_FAILURE;
   }
 
   if (!result.count("graph")) {
     std::cerr << "Please specify freezed graph with -g or --graph option."
               << std::endl;
-    return -1;
+    return EXIT_FAILURE;
   }
 
+  HyperParameters hparams;
+
   if (result.count("hparams")) {
+    if (!ParseHyperPrameters(result["hparams"].as<std::string>(), &hparams)) {
+      return EXIT_FAILURE;
+    }
   }
 
   std::string input_filename = result["input"].as<std::string>();
@@ -167,19 +208,34 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
+  PrintHyperParameters(hparams);
+
   std::cout << "Synthesize..." << std::endl;
 
   std::vector<int32_t> input_lengths;
   input_lengths.push_back(int(sequence.size()));
 
-  std::vector<float> output_wav;
+  std::vector<float> wav0;
 
-  if (!tf_synthesizer.synthesize(sequence, input_lengths, &output_wav)) {
+  if (!tf_synthesizer.synthesize(sequence, input_lengths, &wav0)) {
     std::cerr << "Failed to synthesize for a given sequence." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!SaveWav(output_filename, output_wav, /* sample rate */20000)) {
+  constexpr int32_t sample_rate = 20000;
+
+  // Postprocess audio.
+  // 1. Inverse preemphasis
+  // 2. Remove silence
+  std::vector<float> output_wav = tts::inv_preemphasis(wav0.data(), wav0.size(), -hparams.preemphasis);
+  size_t end_point = tts::find_end_point(output_wav.data(), output_wav.size(), sample_rate);
+
+  std::cout << "Generated wav has " << output_wav.size() << "samples \n";
+  std::cout << "Truncated to " << end_point << " samples(by removing silence duration)\n";
+
+  output_wav.resize(end_point);
+
+  if (!SaveWav(output_filename, output_wav, sample_rate)) {
     std::cerr << "Failed to save wav file :" << output_filename << std::endl;
 
     return EXIT_FAILURE;

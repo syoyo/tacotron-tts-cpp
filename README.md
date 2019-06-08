@@ -2,29 +2,25 @@
 
 Running Tacotron model in TensorFlow C++ API.
 
-Good for running TTS in mobile or embedded device.
+Its good for running TTS in mobile or embedded device.
 
-Code is based on keithito's tacotron implementation: https://github.com/keithito/tacotron 
+Code is based on keithito's tacotron implementation: https://github.com/keithito/tacotron
 
 ## Status
 
 Experimental.
 
-Currently only running Tacontron model is coded in C++.
-
-Python preprocessing is required to generate sequence data from text.
-Python postprocessing is required to do `inv_preemphasis` for Tacotron generated .wav.
+Python preprocessing is required to generate sequence data from a text.
 
 ## Requirment
 
 * TensorFlow r1.8+
-* Ubuntu 16.04
+* Ubuntu 16.04 or later
 * C++ compiler + cmake
 
 ## Dump graph.
 
 In keithito's tacotron repo, append `tf.train.write_graph` to `Synthesizer::load` to save TensorFlow graph.
-
 
 ```
 class Synthesizer:
@@ -70,26 +66,19 @@ See `sample/sequence01.json` for generated example.
 Then,
 
 ```
-$ ./tts -i ../sample/sequence01.json -g ../tacotron_frozen.pb -o output.wav
-```
-
-We need to further process generated `output.wav`.
-In keithito's tacotron repo, run python script like this
-
-```
-import io
-import numpy as np
-from librosa import effects
-from util import audio
-
-wav = audio.load_wav("output.wav")
-wav = audio.inv_preemphasis(wav)
-wav = wav[:audio.find_endpoint(wav)]
-out = io.BytesIO()
-audio.save_wav(wav, "processed.wav")
+$ ./tts -i ../sample/sequence01.json -g ../tacotron_frozen.pb output.wav
 ```
 
 example output01.wav and processed01.wav is included in `sample/`
+
+### Optional parameter
+
+You can specify hyperparameter settings(JSON format) using `-h` option.
+See `sample/hparams.json` for example.
+
+```
+$ ./tts -i ../sample/sequence01.json -h ../sample/hparams.json -g ../tacotron_frozen.pb output.wav
+```
 
 ## Performance
 
@@ -100,7 +89,6 @@ Time for synthesis is roughly 10x slower on 2018's CPU than synthesized audio le
 
 * Write all TTS pipeline fully in C++
   * [ ] Text to sequence
-  * [ ] inv_preemphasis
 
 ## License
 

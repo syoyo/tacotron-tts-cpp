@@ -44,10 +44,12 @@ size_t find_end_point(const float *wav, const size_t wav_len,
   }
 
   for (size_t x = hop_length; x < (wav_len - window_length); x += hop_length) {
+    const size_t end_pos = std::min(wav_len, x + window_length);
+
     // find maximum for range [x, x + window_length]
-    float m = *(std::max_element(wav + x, wav + (x + window_length)));
+    float m = *(std::max_element(wav + x, wav + end_pos));
     if (m < threshold) {
-      return x + hop_length;
+      return std::min(wav_len, x + hop_length);
     }
   }
 
