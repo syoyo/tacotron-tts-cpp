@@ -126,7 +126,7 @@ bool SaveWav(const std::string &filename, const std::vector<float> &samples, con
     max_value = std::max(max_value, std::fabs(samples[i]));
   }
 
-  std::cout << "max value = " << max_value;
+  std::cout << "max value = " << max_value << "\n";
 
   float factor = 32767.0f / std::max(0.01f, max_value);
 
