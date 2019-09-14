@@ -88,7 +88,12 @@ Time for synthesis is roughly 10x slower on 2018's CPU than synthesized audio le
 ## TODO
 
 * Write all TTS pipeline fully in C++
-  * [ ] Text to sequence
+  * [ ] Text to sequence(Issue #1)
+    * [ ] Convert to lower case
+    * [ ] Expand abbreviation
+    * [ ] Normalize numbers(number_to_words. python inflect equivalent)
+    * [ ] Remove extra whitespace
+  * [ ] Use CPU implementation of Griffin-Lim
 
 ## License
 
