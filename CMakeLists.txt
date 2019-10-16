@@ -79,23 +79,12 @@ target_include_directories(tts
     # TensorFlow
     PUBLIC ${TENSORFLOW_DIR}
 
-    # for array_ops.h
-    PUBLIC ${TENSORFLOW_DIR}/bazel-genfiles
-
-    # headers for external packages
-    PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/protobuf_archive/src
-    PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/eigen_archive
-    PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/nsync/public
-    PUBLIC ${TENSORFLOW_EXTERNAL_DIR}/external/com_google_absl
-
     # this project
     PUBLIC ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries( tts
-    # TensorFlow C++
-    tensorflow_cc
-
+    ${TENSORFLOW_LIB}
     ${TTS_EXT_LIBS}
     ${CMAKE_THREAD_LIBS_INIT}
     ${CMAKE_DL_LIBS}
@@ -103,9 +92,9 @@ target_link_libraries( tts
 
 
 # Increase warning level for clang.
-IF (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(tts PRIVATE -Weverything -Werror -Wno-padded -Wno-c++98-compat-pedantic -Wno-documentation -Wno-documentation-unknown-command)
-ENDIF ()
+#IF (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#    target_compile_options(tts PRIVATE -Weverything -Werror -Wno-padded -Wno-c++98-compat-pedantic -Wno-documentation -Wno-documentation-unknown-command)
+#ENDIF ()
 
 add_sanitizers(tts)
 

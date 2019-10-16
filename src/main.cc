@@ -2,21 +2,12 @@
 #include <cstdlib>
 #include <fstream>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-#endif
-
 #include "cxxopts.hpp"
 #include "json.hpp"
 #include "audio_util.h"
 
 #define DR_WAV_IMPLEMENTATION
 #include "dr_wav.h"
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #include "tf_synthesizer.h"
 
