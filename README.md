@@ -48,13 +48,21 @@ Example freeze graph file is included in this repo.
 
 ## Build
 
-Edit tensorflow path(Assume you build TensorFlow from source code) in `bootstrap.sh`, then
+Edit libtensorflow_cc.so path(Assume you build TensorFlow from source code) in `bootstrap.sh`, then
 
 ```
 $ ./bootstrap.sh
 $ build
 $ make
 ```
+
+### Note on libtensorflow_cc
+
+Please make sure building libtensorflow_cc with `--config=monolithic`. Otherwise you'll face undefined symbols error at linking stage.
+
+https://www.tensorflow.org/install/source#preconfigured_configurations
+
+
 
 ## Run
 
