@@ -1,6 +1,6 @@
 # Text-to-speech in (partially) C++ using Tacotron model + Tensorflow
 
-Running Tacotron model in TensorFlow C++ API.
+Running Tacotron model with TensorFlow C API.
 
 Its good for running TTS in mobile or embedded device.
 
