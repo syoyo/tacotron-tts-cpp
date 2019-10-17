@@ -48,21 +48,25 @@ Example freeze graph file is included in this repo.
 
 ## Build
 
-Edit libtensorflow_cc.so path(Assume you build TensorFlow from source code) in `bootstrap.sh`, then
+### Non-docker build
 
+T.B.W.
+
+### Docker build for Linux
+
+```sh
+docker pull stakemura/tensorflow:1.15.0-extra
+docker run --rm -it -v $(pwd):/content/ -w /content/ stakemura/tensorflow:1.15.0-extra bash /content/scripts/bootstrap.sh
+docker run --rm -it -v $(pwd):/content/ -w /content/build/ stakemura/tensorflow:1.15.0-extra make
 ```
-$ ./bootstrap.sh
-$ build
-$ make
+
+### for Android
+
+```sh
+docker pull stakemura/tensorflow:1.15.0-extra-android
+docker run --rm -it -v $(pwd):/content/ -w /content/ stakemura/tensorflow:1.15.0-extra-android bash /content/scripts/bootstrap-android.sh
+docker run --rm -it -v $(pwd):/content/ -w /content/build-android/ stakemura/tensorflow:1.15.0-extra-android make
 ```
-
-### Note on libtensorflow_cc
-
-Please make sure building libtensorflow_cc with `--config=monolithic`. Otherwise you'll face undefined symbols error at linking stage.
-
-https://www.tensorflow.org/install/source#preconfigured_configurations
-
-
 
 ## Run
 

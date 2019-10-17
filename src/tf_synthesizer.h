@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include <tensorflow/c/c_api.h>
+
 namespace tts {
 
 class TensorflowSynthesizer {
@@ -31,9 +33,11 @@ class TensorflowSynthesizer {
   ///
   bool synthesize(const std::vector<int32_t>& input_sequence, const std::vector<int32_t> &input_lengths, std::vector<float> *output);
 
- private:
-  class Impl;
-  std::unique_ptr<Impl> impl;
+private:
+  TF_Session *session = nullptr;
+  TF_Status *status = nullptr;
+  TF_Graph *graph = nullptr;
+  std::string input_layer, output_layer;
 };
 
 }  // namespace tts
